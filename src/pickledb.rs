@@ -23,6 +23,8 @@ pub enum PickleDbDumpPolicy {
     /// If the time that has passed since the last dump is higher than Duration, changes will be dumped,
     /// otherwise changes will not be dumped
     PeriodicDump(Duration),
+    /// Same as `DumpUponRequest` except that data additionally won't be dumped on `Drop`
+    DumpUponRequestWithoutDrop,
 }
 
 /// A struct that represents a PickleDb object
@@ -1044,8 +1046,10 @@ impl PickleDb {
 
 impl Drop for PickleDb {
     fn drop(&mut self) {
-        if let PickleDbDumpPolicy::NeverDump = self.dump_policy {
-        } else {
+        if !matches!(
+            self.dump_policy,
+            PickleDbDumpPolicy::NeverDump | PickleDbDumpPolicy::DumpUponRequestWithoutDrop
+        ) {
             // try to dump, ignore if fails
             let _ = self.dump();
         }
